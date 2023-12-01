@@ -14,21 +14,22 @@ pub fn part_one(input: &str) -> Option<u32> {
 pub fn part_two(input: &str) -> Option<u32> {
     let mut lines = input.lines();
     let mut sum = 0;
-    let decimals: [&str; 9] = [
+    let decimals = [
         "one", "two", "three", "four", "five", "six", "seven", "eight", "nine",
     ];
     for line in &mut lines {
-        let mut digits: Vec<u32> = Vec::new();
+        let mut digits = Vec::new();
         let bytes = line.as_bytes();
         for (i, &char) in bytes.iter().enumerate() {
             if char.is_ascii_digit() {
                 digits.push((char - b'0') as u32)
             } else {
-                (0..decimals.len()).for_each(|j| {
-                    if line[i..].starts_with(decimals[j]) {
-                        digits.push(j as u32 + 1)
+                for (j, &decimal) in decimals.iter().enumerate() {
+                    if line[i..].starts_with(decimal) {
+                        digits.push((j + 1) as u32);
+                        break;
                     }
-                });
+                }
             }
         }
         sum += digits.first()? * 10 + digits.last()?
