@@ -1,5 +1,4 @@
 use regex::Regex;
-use std::cmp;
 
 advent_of_code::solution!(2);
 
@@ -14,9 +13,9 @@ pub fn part_one(input: &str) -> Option<u32> {
             let (amount, color) = cube_type.split_once(' ')?;
             let amount = amount.parse().unwrap();
             match color {
-                "red" => r = cmp::max(amount, r),
-                "green" => g = cmp::max(amount, g),
-                "blue" => b = cmp::max(amount, b),
+                "red" => r = r.max(amount),
+                "green" => g = g.max(amount),
+                "blue" => b = b.max(amount),
                 _ => panic!(),
             }
         }
@@ -39,9 +38,9 @@ pub fn part_two(input: &str) -> Option<u32> {
             let (amount, color) = cube_type.split_once(' ')?;
             let amount = amount.parse().unwrap();
             match color {
-                "red" => r = cmp::max(amount, r),
-                "green" => g = cmp::max(amount, g),
-                "blue" => b = cmp::max(amount, b),
+                "red" => r = r.max(amount),
+                "green" => g = g.max(amount),
+                "blue" => b = b.max(amount),
                 _ => panic!(),
             }
         }
