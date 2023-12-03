@@ -19,8 +19,8 @@ pub fn part_two(input: &str) -> Option<u32> {
     ];
     for line in lines {
         let mut digits = Vec::new();
-        let bytes = line.as_bytes();
-        for (i, &char) in bytes.iter().enumerate() {
+        let bytes = line.bytes();
+        for (i, char) in bytes.enumerate() {
             if char.is_ascii_digit() {
                 digits.push((char - b'0') as u32)
             } else {
