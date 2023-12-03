@@ -1,9 +1,9 @@
 advent_of_code::solution!(1);
 
 pub fn part_one(input: &str) -> Option<u32> {
-    let mut lines = input.lines();
+    let lines = input.lines();
     let mut sum = 0;
-    for line in &mut lines {
+    for line in lines {
         let d1 = line.chars().find(|c| c.is_ascii_digit())?.to_digit(10)?;
         let d2 = line.chars().rfind(|c| c.is_ascii_digit())?.to_digit(10)?;
         sum += 10 * d1 + d2;
@@ -12,12 +12,12 @@ pub fn part_one(input: &str) -> Option<u32> {
 }
 
 pub fn part_two(input: &str) -> Option<u32> {
-    let mut lines = input.lines();
+    let lines = input.lines();
     let mut sum = 0;
     let decimals = [
         "one", "two", "three", "four", "five", "six", "seven", "eight", "nine",
     ];
-    for line in &mut lines {
+    for line in lines {
         let mut digits = Vec::new();
         let bytes = line.as_bytes();
         for (i, &char) in bytes.iter().enumerate() {
