@@ -1,3 +1,5 @@
+use std::collections::{HashMap, HashSet};
+
 advent_of_code::solution!(3);
 
 #[allow(clippy::needless_range_loop)]
@@ -36,13 +38,68 @@ pub fn part_one(input: &str) -> Option<u32> {
     Some(sum)
 }
 
+#[allow(clippy::needless_range_loop)]
+pub fn part_two(input: &str) -> Option<u32> {
+    let schematic: &[&[u8]] = &input
+        .lines()
+        .map(|line| line.as_bytes())
+        .collect::<Vec<&[u8]>>();
+    let width = schematic[0].len();
+    let height = schematic.len();
+    let mut map: HashMap<(usize, usize), (u32, bool)> = HashMap::new();
+
+    for i in 0..height {
+        let mut num = 0;
+        let mut gears: HashSet<(usize, usize)> = HashSet::new();
+        for j in 0..width {
+            if schematic[i][j].is_ascii_digit() {
+                num = num * 10 + (schematic[i][j] - b'0') as u32;
+                for i in i.decr_or_remain()..(i + 2).min(height) {
+                    for j in j.decr_or_remain()..(j + 2).min(width) {
+                        if schematic[i][j].is_asterisk() {
+                            gears.insert((i, j));
+                        }
+                    }
+                }
+            } else {
+                for &(i, j) in &gears {
+                    if map.get(&(i, j)).is_none() {
+                        map.insert((i, j), (num, false));
+                    } else {
+                        map.insert((i, j), (map.get(&(i, j))?.0 * num, true));
+                    }
+                }
+                num = 0;
+                gears = HashSet::new();
+            }
+        }
+        for &(i, j) in &gears {
+            if map.get(&(i, j)).is_none() {
+                map.insert((i, j), (num, false));
+            } else {
+                map.insert((i, j), (map.get(&(i, j))?.0 * num, true));
+            }
+        }
+    }
+    let sum = map
+        .iter()
+        .fold(0, |acc, x| if x.1 .1 { acc + x.1 .0 } else { acc });
+    Some(sum)
+}
+
 trait Character {
     fn is_symbol(&self) -> bool;
+
+    fn is_asterisk(&self) -> bool;
 }
 
 impl Character for u8 {
     fn is_symbol(&self) -> bool {
         !(self.is_ascii_digit() || self == &b'.')
+    }
+
+    fn is_asterisk(&self) -> bool {
+        self == &b'*'
     }
 }
 
@@ -58,10 +115,6 @@ impl Unsinged for usize {
             *self - 1
         }
     }
-}
-
-pub fn part_two(input: &str) -> Option<u32> {
-    None
 }
 
 #[cfg(test)]
