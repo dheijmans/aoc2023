@@ -14,7 +14,11 @@ pub fn part_one(input: &str) -> Option<u32> {
 pub fn part_two(input: &str) -> Option<u32> {
     let lines = input.lines();
     let cards: Vec<Card> = lines.map(Card::from).collect();
-    let sum = cards.iter().map(|x| x.calculate_instances(&cards)).sum();
+    let mut instances: Vec<Option<u32>> = vec![None; cards.len()];
+    let sum = cards
+        .iter()
+        .map(|x| x.calculate_instances(&cards, &mut instances))
+        .sum();
     Some(sum)
 }
 
@@ -39,18 +43,23 @@ impl Card {
         points
     }
 
-    fn calculate_instances(&self, cards: &Vec<Card>) -> u32 {
+    fn calculate_instances(&self, cards: &Vec<Card>, instances: &mut Vec<Option<u32>>) -> u32 {
+        if instances[self.id - 1].is_some() {
+            return instances[self.id - 1].unwrap();
+        }
         let mut wins: usize = 0;
         for number in &self.numbers {
             if self.winning_numbers.contains(number) {
                 wins += 1;
             }
         }
-        cards
+        let res = cards
             .get((self.id)..(self.id + wins).min(cards.len()))
             .unwrap()
             .iter()
-            .fold(1, |acc, x| acc + x.calculate_instances(cards))
+            .fold(1, |acc, x| acc + x.calculate_instances(cards, instances));
+        instances[self.id - 1] = Some(res);
+        res
     }
 }
 
