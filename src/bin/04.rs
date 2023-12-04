@@ -12,11 +12,14 @@ pub fn part_one(input: &str) -> Option<u32> {
 }
 
 pub fn part_two(input: &str) -> Option<u32> {
-    None
+    let lines = input.lines();
+    let cards: Vec<Card> = lines.map(Card::from).collect();
+    let sum = cards.iter().map(|x| x.calculate_instances(&cards)).sum();
+    Some(sum)
 }
 
 struct Card {
-    id: u32,
+    id: usize,
     winning_numbers: Vec<u32>,
     numbers: Vec<u32>,
 }
@@ -35,13 +38,27 @@ impl Card {
         }
         points
     }
+
+    fn calculate_instances(&self, cards: &Vec<Card>) -> u32 {
+        let mut wins: usize = 0;
+        for number in &self.numbers {
+            if self.winning_numbers.contains(number) {
+                wins += 1;
+            }
+        }
+        cards
+            .get((self.id)..(self.id + wins).min(cards.len()))
+            .unwrap()
+            .iter()
+            .fold(1, |acc, x| acc + x.calculate_instances(cards))
+    }
 }
 
 impl From<&str> for Card {
     fn from(card: &str) -> Self {
         let regex = Regex::new(r"Card |: | \| ").unwrap();
         let mut splits = regex.split(card).filter(|&x| !x.is_empty());
-        let id: u32 = splits.next().unwrap().trim().parse::<u32>().unwrap();
+        let id: usize = splits.next().unwrap().trim().parse::<usize>().unwrap();
         let winning_numbers: Vec<u32> = parse_numbers(splits.next().unwrap());
         let numbers: Vec<u32> = parse_numbers(splits.next().unwrap());
         Card {
