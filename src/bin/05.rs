@@ -117,7 +117,7 @@ impl Range {
         }
         if seed_range.start + seed_range.length > self.source + self.length {
             residue.push(SeedRange {
-                start: self.source + self.length - 1,
+                start: self.source + self.length,
                 length: seed_range.start + seed_range.length - self.source - self.length,
             });
         }
