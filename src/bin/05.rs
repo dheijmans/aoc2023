@@ -34,9 +34,9 @@ pub fn part_two(input: &str) -> Option<u32> {
         });
     }
     let maps: Vec<Map> = maps.split("\n\n").map(Map::parse).collect();
-    let locations: Vec<SeedRange> = maps.iter().fold(combine(&mut seed_ranges), |acc, x| {
-        x.calculate_next_seed_ranges(acc)
-    });
+    let locations: Vec<SeedRange> = maps
+        .iter()
+        .fold(seed_ranges, |acc, x| x.calculate_next_seed_ranges(acc));
     let mininum = locations.iter().fold(i64::MAX, |acc, x| x.start.min(acc));
     Some(mininum as u32)
 }
@@ -77,35 +77,8 @@ impl Map {
             }
             next_seed_ranges.push(seed_range);
         }
-        combine(&mut next_seed_ranges)
+        next_seed_ranges
     }
-}
-
-fn combine(seed_ranges: &mut Vec<SeedRange>) -> Vec<SeedRange> {
-    let mut combined: Vec<SeedRange> = vec![];
-    seed_ranges.sort_by(|a, b| {
-        if !a.eq(b) {
-            return (a.start + a.length).cmp(&(b.start + b.length));
-        }
-        b.start.cmp(&a.start)
-    });
-    while let Some(seed_range) = seed_ranges.pop() {
-        let end = seed_range.start + seed_range.length - 1;
-        let mut start = seed_range.start;
-        while let Some(extending_seed_range) = seed_ranges.pop() {
-            if seed_range.contains(extending_seed_range.start + extending_seed_range.length - 1) {
-                start = start.min(extending_seed_range.start);
-                continue;
-            }
-            seed_ranges.push(extending_seed_range);
-            break;
-        }
-        combined.push(SeedRange {
-            start,
-            length: end - start + 1,
-        });
-    }
-    combined
 }
 
 struct Range {
@@ -165,12 +138,6 @@ impl Range {
 struct SeedRange {
     start: i64,
     length: i64,
-}
-
-impl SeedRange {
-    fn contains(&self, seed: i64) -> bool {
-        seed >= self.start && seed < self.start + self.length
-    }
 }
 
 trait Parse {
