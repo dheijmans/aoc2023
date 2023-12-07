@@ -2,11 +2,13 @@ use std::collections::BinaryHeap;
 
 advent_of_code::solution!(7);
 
+const JOKER_INDEX: usize = 9;
+
 pub fn part_one(input: &str) -> Option<u32> {
     let lines = input.lines();
     let mut hands: BinaryHeap<Hand> = BinaryHeap::new();
     for line in lines {
-        hands.push(Hand::new(line, false));
+        hands.push(Hand::parse(line, false));
     }
     Some(calculate_winnings(hands))
 }
@@ -15,7 +17,7 @@ pub fn part_two(input: &str) -> Option<u32> {
     let lines = input.lines();
     let mut hands: BinaryHeap<Hand> = BinaryHeap::new();
     for line in lines {
-        hands.push(Hand::new(line, true));
+        hands.push(Hand::parse(line, true));
     }
     Some(calculate_winnings(hands))
 }
@@ -29,7 +31,7 @@ fn calculate_winnings(hands: BinaryHeap<Hand>) -> u32 {
 }
 
 #[derive(PartialEq, Eq, PartialOrd, Ord)]
-enum HandType {
+enum Rank {
     HighCard,
     OnePair,
     TwoPair,
@@ -41,60 +43,77 @@ enum HandType {
 
 #[derive(PartialEq, Eq, PartialOrd, Ord)]
 struct Hand {
-    hand_type: HandType,
+    hand_type: Rank,
     cards: [i8; 5],
     bid: u32,
 }
 
 impl Hand {
-    fn new(line: &str, joker_rule: bool) -> Hand {
-        let (hand, bid) = line.split_once(' ').unwrap();
-        let bid: u32 = bid.parse().unwrap();
-        let mut cards: [i8; 5] = [0; 5];
-        let mut occurences: [u8; 13] = [0; 13];
-        for (i, card) in hand.bytes().enumerate() {
-            let value = match card {
-                b'A' => 12,
-                b'K' => 11,
-                b'Q' => 10,
-                b'J' => 9,
-                b'T' => 8,
-                card if card.is_ascii_digit() => (card - b'2') as i8,
-                _ => panic!(),
-            };
-            cards[i] = value;
-            occurences[value as usize] += 1;
-        }
-        if joker_rule {
-            let jokers = occurences[9];
-            occurences[9] = 0;
-            let index = occurences
-                .iter()
-                .enumerate()
-                .max_by_key(|&(_, val)| val)
-                .unwrap()
-                .0;
-            occurences[index] += jokers;
-            cards.iter_mut().for_each(|card| {
-                if *card == 9 {
-                    *card = -1;
-                }
-            });
-        }
-        let hand_type: HandType = match occurences {
-            occ if occ.contains(&5) => HandType::FiveOfKind,
-            occ if occ.contains(&4) => HandType::FourOfKind,
-            occ if occ.contains(&3) && occ.contains(&2) => HandType::FullHouse,
-            occ if occ.contains(&3) => HandType::ThreeOfKind,
-            occ if occ.iter().filter(|&x| x.eq(&2)).count() == 2 => HandType::TwoPair,
-            occ if occ.contains(&2) => HandType::OnePair,
-            _ => HandType::HighCard,
-        };
+    fn new(hand_type: Rank, cards: [i8; 5], bid: u32) -> Self {
         Hand {
             hand_type,
             cards,
             bid,
         }
+    }
+
+    fn parse(line: &str, joker_rule: bool) -> Hand {
+        let (hand, bid) = line.split_once(' ').unwrap();
+        let bid: u32 = bid.parse().unwrap();
+        let (mut cards, mut occurences) = parse_hand(hand);
+        if joker_rule {
+            apply_joker_rule(&mut cards, &mut occurences)
+        }
+        let hand_type: Rank = determine_rank(&occurences);
+        Hand::new(hand_type, cards, bid)
+    }
+}
+
+fn parse_hand(input: &str) -> ([i8; 5], [u8; 13]) {
+    let mut cards = [0; 5];
+    let mut occurences = [0; 13];
+    for (i, card) in input.bytes().enumerate() {
+        let value: i8 = match card {
+            b'A' => 12,
+            b'K' => 11,
+            b'Q' => 10,
+            b'J' => JOKER_INDEX as i8,
+            b'T' => 8,
+            card if card.is_ascii_digit() => (card - b'2') as i8,
+            _ => panic!(),
+        };
+        cards[i] = value;
+        occurences[value as usize] += 1;
+    }
+    (cards, occurences)
+}
+
+fn apply_joker_rule(cards: &mut [i8; 5], occurences: &mut [u8; 13]) {
+    let jokers = occurences[JOKER_INDEX];
+    occurences[JOKER_INDEX] = 0;
+    let index = occurences
+        .iter()
+        .enumerate()
+        .max_by_key(|&(_, val)| val)
+        .unwrap()
+        .0;
+    occurences[index] += jokers;
+    cards.iter_mut().for_each(|card| {
+        if *card == JOKER_INDEX as i8 {
+            *card = -1;
+        }
+    });
+}
+
+fn determine_rank(occurences: &[u8; 13]) -> Rank {
+    match occurences {
+        occ if occ.contains(&5) => Rank::FiveOfKind,
+        occ if occ.contains(&4) => Rank::FourOfKind,
+        occ if occ.contains(&3) && occ.contains(&2) => Rank::FullHouse,
+        occ if occ.contains(&3) => Rank::ThreeOfKind,
+        occ if occ.iter().filter(|&x| x.eq(&2)).count() == 2 => Rank::TwoPair,
+        occ if occ.contains(&2) => Rank::OnePair,
+        _ => Rank::HighCard,
     }
 }
 
