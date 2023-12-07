@@ -6,18 +6,26 @@ pub fn part_one(input: &str) -> Option<u32> {
     let lines = input.lines();
     let mut hands: BinaryHeap<Hand> = BinaryHeap::new();
     for line in lines {
-        hands.push(Hand::new(line));
+        hands.push(Hand::new(line, false));
     }
-    let total_winnings = hands
-        .into_sorted_vec()
-        .iter()
-        .zip(1..)
-        .fold(0, |acc, x| acc + x.0.bid * x.1);
-    Some(total_winnings)
+    Some(calculate_winnings(hands))
 }
 
 pub fn part_two(input: &str) -> Option<u32> {
-    None
+    let lines = input.lines();
+    let mut hands: BinaryHeap<Hand> = BinaryHeap::new();
+    for line in lines {
+        hands.push(Hand::new(line, true));
+    }
+    Some(calculate_winnings(hands))
+}
+
+fn calculate_winnings(hands: BinaryHeap<Hand>) -> u32 {
+    hands
+        .into_sorted_vec()
+        .iter()
+        .zip(1..)
+        .fold(0, |acc, x| acc + x.0.bid * x.1)
 }
 
 #[derive(PartialEq, Eq, PartialOrd, Ord)]
@@ -34,15 +42,15 @@ enum HandType {
 #[derive(PartialEq, Eq, PartialOrd, Ord)]
 struct Hand {
     hand_type: HandType,
-    cards: [u8; 5],
+    cards: [i8; 5],
     bid: u32,
 }
 
 impl Hand {
-    fn new(line: &str) -> Hand {
+    fn new(line: &str, joker_rule: bool) -> Hand {
         let (hand, bid) = line.split_once(' ').unwrap();
         let bid: u32 = bid.parse().unwrap();
-        let mut cards: [u8; 5] = [0; 5];
+        let mut cards: [i8; 5] = [0; 5];
         let mut occurences: [u8; 13] = [0; 13];
         for (i, card) in hand.bytes().enumerate() {
             let value = match card {
@@ -51,11 +59,27 @@ impl Hand {
                 b'Q' => 10,
                 b'J' => 9,
                 b'T' => 8,
-                card if card.is_ascii_digit() => card - b'2',
+                card if card.is_ascii_digit() => (card - b'2') as i8,
                 _ => panic!(),
             };
             cards[i] = value;
             occurences[value as usize] += 1;
+        }
+        if joker_rule {
+            let jokers = occurences[9];
+            occurences[9] = 0;
+            let index = occurences
+                .iter()
+                .enumerate()
+                .max_by_key(|&(_, val)| val)
+                .unwrap()
+                .0;
+            occurences[index] += jokers;
+            cards.iter_mut().for_each(|card| {
+                if *card == 9 {
+                    *card = -1;
+                }
+            });
         }
         let hand_type: HandType = match occurences {
             occ if occ.contains(&5) => HandType::FiveOfKind,
