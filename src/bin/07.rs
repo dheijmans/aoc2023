@@ -8,7 +8,11 @@ pub fn part_one(input: &str) -> Option<u32> {
     for line in lines {
         hands.push(Hand::new(line));
     }
-    let total_winnings = hands.iter().zip(1..).fold(0, |acc, x| acc + x.0.bid * x.1);
+    let total_winnings = hands
+        .into_sorted_vec()
+        .iter()
+        .zip(1..)
+        .fold(0, |acc, x| acc + x.0.bid * x.1);
     Some(total_winnings)
 }
 
@@ -16,16 +20,18 @@ pub fn part_two(input: &str) -> Option<u32> {
     None
 }
 
+#[derive(PartialEq, Eq, PartialOrd, Ord)]
 enum HandType {
-    FiveOfKind,
-    FourOfKind,
-    FullHouse,
-    ThreeOfKind,
-    TwoPair,
-    OnePair,
     HighCard,
+    OnePair,
+    TwoPair,
+    ThreeOfKind,
+    FullHouse,
+    FourOfKind,
+    FiveOfKind,
 }
 
+#[derive(PartialEq, Eq, PartialOrd, Ord)]
 struct Hand {
     hand_type: HandType,
     cards: [u8; 5],
