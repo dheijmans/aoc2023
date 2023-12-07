@@ -7,18 +7,15 @@ const JOKER_INDEX: usize = 9;
 pub fn part_one(input: &str) -> Option<u32> {
     let lines = input.lines();
     let mut hands: BinaryHeap<Hand> = BinaryHeap::new();
-    for line in lines {
-        hands.push(Hand::parse(line, false));
-    }
+    lines.for_each(|line| hands.push(Hand::parse(line, false)));
     Some(calculate_winnings(hands))
 }
 
 pub fn part_two(input: &str) -> Option<u32> {
     let lines = input.lines();
     let mut hands: BinaryHeap<Hand> = BinaryHeap::new();
-    for line in lines {
-        hands.push(Hand::parse(line, true));
-    }
+    lines.for_each(|line| hands.push(Hand::parse(line, true)));
+
     Some(calculate_winnings(hands))
 }
 
@@ -72,7 +69,7 @@ impl Hand {
 fn parse_hand(input: &str) -> ([i8; 5], [u8; 13]) {
     let mut cards = [0; 5];
     let mut occurences = [0; 13];
-    for (i, card) in input.bytes().enumerate() {
+    input.bytes().enumerate().for_each(|(i, card)| {
         let value: i8 = match card {
             b'A' => 12,
             b'K' => 11,
@@ -84,7 +81,7 @@ fn parse_hand(input: &str) -> ([i8; 5], [u8; 13]) {
         };
         cards[i] = value;
         occurences[value as usize] += 1;
-    }
+    });
     (cards, occurences)
 }
 
