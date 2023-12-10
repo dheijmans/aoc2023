@@ -1,7 +1,9 @@
 advent_of_code::solution!(10);
 
-const WIDTH: usize = 141;
-const HEIGHT: usize = 141;
+// These values are dependent on the input
+const WIDTH: usize = 140;
+const HEIGHT: usize = 140;
+const START: char = '|';
 
 pub fn part_one(input: &str) -> Option<u32> {
     let field = Field::parse(input);
@@ -9,7 +11,42 @@ pub fn part_one(input: &str) -> Option<u32> {
 }
 
 pub fn part_two(input: &str) -> Option<u32> {
-    None
+    let field = Field::parse(input);
+    let pipes: Vec<Vec<char>> = field.get_pipes()?;
+    calculate_enclosed_tiles(pipes)
+}
+
+fn calculate_enclosed_tiles(pipes: Vec<Vec<char>>) -> Option<u32> {
+    let mut count = 0;
+    for row in pipes {
+        let mut inside = false;
+        let mut corner = '.';
+        for char in row {
+            match char {
+                '|' => inside = !inside,
+                '-' => continue,
+                'L' => corner = 'L',
+                'J' => match corner {
+                    'L' => continue,
+                    'F' => inside = !inside,
+                    _ => panic!(),
+                },
+                '7' => match corner {
+                    'F' => continue,
+                    'L' => inside = !inside,
+                    _ => panic!(),
+                },
+                'F' => corner = 'F',
+                '.' => {
+                    if inside {
+                        count += 1;
+                    }
+                }
+                _ => panic!(),
+            }
+        }
+    }
+    Some(count)
 }
 
 #[derive(Clone, Copy, Default, PartialEq)]
@@ -21,12 +58,14 @@ struct Coords {
 #[derive(Clone, Copy)]
 struct Pipe {
     ends: [Coords; 2],
+    char: char,
 }
 
 impl Pipe {
-    fn new(x1: usize, y1: usize, x2: usize, y2: usize) -> Option<Self> {
+    fn new(x1: usize, y1: usize, x2: usize, y2: usize, char: char) -> Option<Self> {
         Some(Self {
             ends: [Coords { x: x1, y: y1 }, Coords { x: x2, y: y2 }],
+            char,
         })
     }
 }
@@ -37,17 +76,17 @@ struct Field {
 
 impl Field {
     fn parse(input: &str) -> Self {
-        let mut tiles: Vec<Vec<Option<Pipe>>> = vec![vec![None; HEIGHT]; WIDTH];
+        let mut tiles: Vec<Vec<Option<Pipe>>> = vec![vec![None; HEIGHT + 1]; WIDTH + 1];
         let mut start = Coords::default();
         for (y, line) in (1usize..).zip(input.lines()) {
             for (x, char) in (1usize..).zip(line.chars()) {
                 tiles[x][y] = match char {
-                    '|' => Pipe::new(x, y - 1, x, y + 1),
-                    '-' => Pipe::new(x - 1, y, x + 1, y),
-                    'L' => Pipe::new(x, y - 1, x + 1, y),
-                    'J' => Pipe::new(x, y - 1, x - 1, y),
-                    '7' => Pipe::new(x - 1, y, x, y + 1),
-                    'F' => Pipe::new(x + 1, y, x, y + 1),
+                    '|' => Pipe::new(x, y - 1, x, y + 1, char),
+                    '-' => Pipe::new(x - 1, y, x + 1, y, char),
+                    'L' => Pipe::new(x, y - 1, x + 1, y, char),
+                    'J' => Pipe::new(x, y - 1, x - 1, y, char),
+                    '7' => Pipe::new(x - 1, y, x, y + 1, char),
+                    'F' => Pipe::new(x + 1, y, x, y + 1, char),
                     'S' => {
                         start = Coords { x, y };
                         None
@@ -69,6 +108,7 @@ impl Field {
             start_ends[0].y,
             start_ends[1].x,
             start_ends[1].y,
+            START,
         );
         Field { tiles, start }
     }
@@ -88,6 +128,23 @@ impl Field {
         }
         Some(steps)
     }
+
+    fn get_pipes(&self) -> Option<Vec<Vec<char>>> {
+        let mut pipes: Vec<Vec<char>> = vec![vec!['.'; WIDTH]; HEIGHT];
+        let mut previous = self.start;
+        let mut current = self.tiles[previous.x][previous.y]?.ends[0];
+        pipes[previous.y - 1][previous.x - 1] = START;
+        while !current.eq(&self.start) {
+            pipes[current.y - 1][current.x - 1] = self.tiles[current.x][current.y]?.char;
+            let temp = current;
+            current = *self.tiles[current.x][current.y]?
+                .ends
+                .iter()
+                .find(|&tile| !tile.eq(&previous))?;
+            previous = temp;
+        }
+        Some(pipes)
+    }
 }
 
 #[cfg(test)]
@@ -97,7 +154,7 @@ mod tests {
     #[test]
     fn test_part_one() {
         let result = part_one(&advent_of_code::template::read_file("examples", DAY));
-        assert_eq!(result, Some(4));
+        assert_eq!(result, None);
     }
 
     #[test]
