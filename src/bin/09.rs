@@ -1,13 +1,15 @@
 advent_of_code::solution!(9);
 
 pub fn part_one(input: &str) -> Option<i64> {
-    let report = Report::parse(input);
+    let report = Report::parse(input, false);
     let predictions = report.predict();
     Some(predictions.iter().sum())
 }
 
 pub fn part_two(input: &str) -> Option<i64> {
-    None
+    let report = Report::parse(input, true);
+    let predictions = report.predict();
+    Some(predictions.iter().sum())
 }
 
 struct Report {
@@ -15,13 +17,18 @@ struct Report {
 }
 
 impl Report {
-    fn parse(input: &str) -> Self {
+    fn parse(input: &str, reverse: bool) -> Self {
         let history = input
             .lines()
             .map(|line| {
-                line.split(' ')
+                let mut values: Vec<i64> = line
+                    .split(' ')
                     .map(|value| value.parse().unwrap())
-                    .collect()
+                    .collect();
+                if reverse {
+                    values.reverse();
+                }
+                values
             })
             .collect();
         Report { history }
