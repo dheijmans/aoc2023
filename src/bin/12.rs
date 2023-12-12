@@ -28,13 +28,12 @@ fn count_arrangements(conditions: &str, sizes: &Vec<usize>, index: usize) -> Opt
     }
 
     for i in 0..=(conditions.len() - current) {
-        if (conditions[i..(i + current)].contains('.'))
+        if !((conditions[i..(i + current)].contains('.'))
             || (i > 0 && conditions.chars().nth(i - 1)?.eq(&'#'))
-            || (i + current < conditions.len() && conditions.chars().nth(i + current)?.eq(&'#'))
+            || (i + current < conditions.len() && conditions.chars().nth(i + current)?.eq(&'#')))
         {
-            continue;
+            arrangements += count_arrangements(&conditions[(i + current + 1)..], sizes, index + 1)?;
         }
-        arrangements += count_arrangements(&conditions[(i + current + 1)..], sizes, index + 1)?;
     }
     Some(arrangements)
 }
