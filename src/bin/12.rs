@@ -31,8 +31,8 @@ fn count_arrangements(conditions: &str, sizes: &Vec<usize>, index: usize) -> Opt
     }
 
     for i in 0..=(conditions.len() - current) {
-        if !((conditions[i..(i + current)].contains('.'))
-            || (i + current < conditions.len() && conditions.as_bytes()[i + current].eq(&b'#')))
+        if !(conditions[i..(i + current)].contains('.')
+            || conditions.as_bytes()[i + current].eq(&b'#'))
         {
             arrangements += count_arrangements(&conditions[(i + current + 1)..], sizes, index + 1)?;
         }
