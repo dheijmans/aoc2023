@@ -11,13 +11,16 @@ pub fn part_one(input: &str) -> Option<u32> {
     Some(sum)
 }
 
-pub fn part_two(input: &str) -> Option<u32> {
+pub fn part_two(_input: &str) -> Option<u32> {
     None
 }
 
 fn count_arrangements(conditions: &str, sizes: &Vec<usize>, index: usize) -> Option<u32> {
     if index >= sizes.len() {
-        return Some(1);
+        match conditions.contains('#') {
+            false => return Some(1),
+            true => return Some(0),
+        }
     }
 
     let current = sizes[index];
@@ -29,7 +32,7 @@ fn count_arrangements(conditions: &str, sizes: &Vec<usize>, index: usize) -> Opt
 
     for i in 0..=(conditions.len() - current) {
         if !((conditions[i..(i + current)].contains('.'))
-            || (i > 0 && conditions.chars().nth(i - 1)?.eq(&'#'))
+            || (i > 0 && conditions[..i].contains('#'))
             || (i + current < conditions.len() && conditions.chars().nth(i + current)?.eq(&'#')))
         {
             arrangements += count_arrangements(&conditions[(i + current + 1)..], sizes, index + 1)?;
@@ -45,7 +48,7 @@ mod tests {
     #[test]
     fn test_part_one() {
         let result = part_one(&advent_of_code::template::read_file("examples", DAY));
-        assert_eq!(result, None);
+        assert_eq!(result, Some(21));
     }
 
     #[test]
