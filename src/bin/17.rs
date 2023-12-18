@@ -18,18 +18,20 @@ pub fn part_two(input: &str) -> Option<u32> {
 }
 
 fn dijkstra(city: &City, min: u8, max: u8) -> Option<u32> {
-    let mut queue: BinaryHeap<State> = BinaryHeap::new();
-    queue.push(State::new(0, point![0, 0], vector![0, 0], 0));
+    let mut queue: BinaryHeap<Pair> = BinaryHeap::new();
+    queue.push(Pair::new(0, State::new(point![0, 0], vector![0, 0], 0)));
     let mut visited: HashSet<State> = HashSet::new();
     while !queue.is_empty() {
-        let current = queue.pop()?;
+        let pair = queue.pop()?;
+        let heat_loss = pair.heat_loss;
+        let current = pair.state;
 
         if current
             .pos
             .eq(&point![city.width as i64 - 1, city.height as i64 - 1])
             && current.steps >= min
         {
-            return Some(current.heat_loss);
+            return Some(heat_loss);
         }
 
         if visited.contains(&current) {
@@ -41,11 +43,9 @@ fn dijkstra(city: &City, min: u8, max: u8) -> Option<u32> {
         if current.steps < max && !current.dir.eq(&vector![0, 0]) {
             let new_pos = current.pos + current.dir;
             if city.is_bounded(new_pos) {
-                queue.push(State::new(
-                    current.heat_loss + city.get_heat_loss(new_pos),
-                    new_pos,
-                    current.dir,
-                    current.steps + 1,
+                queue.push(Pair::new(
+                    heat_loss + city.get_heat_loss(new_pos),
+                    State::new(new_pos, current.dir, current.steps + 1),
                 ));
             }
         }
@@ -60,11 +60,9 @@ fn dijkstra(city: &City, min: u8, max: u8) -> Option<u32> {
             if !city.is_bounded(new_pos) {
                 continue;
             }
-            queue.push(State::new(
-                current.heat_loss + city.get_heat_loss(new_pos),
-                new_pos,
-                dir,
-                1,
+            queue.push(Pair::new(
+                heat_loss + city.get_heat_loss(new_pos),
+                State::new(new_pos, dir, 1),
             ));
         }
     }
@@ -72,27 +70,49 @@ fn dijkstra(city: &City, min: u8, max: u8) -> Option<u32> {
 }
 
 #[derive(PartialEq, Eq, Hash, Clone, Copy)]
-struct State {
+struct Pair {
     heat_loss: u32,
+    state: State,
+}
+
+impl Pair {
+    fn new(heat_loss: u32, state: State) -> Self {
+        Self { heat_loss, state }
+    }
+}
+
+impl Ord for Pair {
+    fn cmp(&self, other: &Self) -> Ordering {
+        other.heat_loss.cmp(&self.heat_loss)
+    }
+}
+
+impl PartialOrd for Pair {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+#[derive(PartialEq, Eq, Hash, Clone, Copy)]
+struct State {
     pos: Point2<i64>,
     dir: Vector2<i64>,
     steps: u8,
 }
 
 impl State {
-    fn new(heat_loss: u32, pos: Point2<i64>, dir: Vector2<i64>, steps: u8) -> Self {
-        Self {
-            heat_loss,
-            pos,
-            dir,
-            steps,
-        }
+    fn new(pos: Point2<i64>, dir: Vector2<i64>, steps: u8) -> Self {
+        Self { pos, dir, steps }
+    }
+
+    fn distance(&self) -> i64 {
+        self.pos.x + self.pos.y
     }
 }
 
 impl Ord for State {
     fn cmp(&self, other: &Self) -> Ordering {
-        other.heat_loss.cmp(&self.heat_loss)
+        self.distance().cmp(&other.distance())
     }
 }
 
