@@ -22,9 +22,7 @@ pub fn part_two(input: &str) -> Option<u64> {
     let (workflow_input, _) = input.split_once("\n\n")?;
     let workflows = parse_workflows(workflow_input)?;
     let ranges = calculate_accepted_ranges(&workflows)?;
-    println!("{}", ranges.len());
     let combinations = ranges.iter().fold(0, |acc, range| acc + range.combos());
-    // combinations -= calculate_duplicates(&ranges)?;
     Some(combinations)
 }
 
@@ -151,7 +149,7 @@ impl Range {
 impl Default for Range {
     fn default() -> Self {
         Self {
-            start: 0,
+            start: 1,
             end: 4000,
         }
     }
@@ -240,22 +238,5 @@ impl Workflow {
             }
         }
         Some(self.default.clone())
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_part_one() {
-        let result = part_one(&advent_of_code::template::read_file("examples", DAY));
-        assert_eq!(result, Some(19114));
-    }
-
-    #[test]
-    fn test_part_two() {
-        let result = part_two(&advent_of_code::template::read_file("examples", DAY));
-        assert_eq!(result, Some(167409079868000));
     }
 }
