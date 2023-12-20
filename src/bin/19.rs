@@ -22,7 +22,9 @@ pub fn part_two(input: &str) -> Option<u64> {
     let (workflow_input, _) = input.split_once("\n\n")?;
     let workflows = parse_workflows(workflow_input)?;
     let ranges = calculate_accepted_ranges(&workflows)?;
+    println!("{}", ranges.len());
     let combinations = ranges.iter().fold(0, |acc, range| acc + range.combos());
+    // combinations -= calculate_duplicates(&ranges)?;
     Some(combinations)
 }
 
@@ -58,25 +60,20 @@ fn calculate_accepted_ranges(workflows: &HashMap<String, Workflow>) -> Option<Ve
                 let operation = condition.chars().nth(1)?;
                 let (inside, outside);
                 match operation {
-                    '<' => {
-                        (inside, outside) = range.split(category, threshold);
-                    }
-                    '>' => {
-                        (outside, inside) = range.split(category, threshold + 1);
-                    }
+                    '<' => (inside, outside) = range.split(category, threshold),
+                    '>' => (outside, inside) = range.split(category, threshold + 1),
                     _ => panic!(),
                 }
-                if inside.is_some() {
+                if let Some(partition) = inside {
                     match result {
-                        "A" => accepted.push(inside?),
+                        "A" => accepted.push(partition),
                         "R" => (),
-                        next_workflow => next.push((inside?, workflows.get(next_workflow)?)),
+                        next_workflow => next.push((partition, workflows.get(next_workflow)?)),
                     }
                 }
-                if let Some(partition) = outside {
-                    range = partition;
-                } else {
-                    continue 'outer;
+                match outside {
+                    Some(partition) => range = partition,
+                    None => continue 'outer,
                 }
             }
             match workflow.default.as_str() {
@@ -143,7 +140,7 @@ struct Range {
 
 impl Range {
     fn combos(&self) -> u64 {
-        (self.end - self.start).into()
+        (self.end - self.start + 1).into()
     }
 
     fn new(start: u32, end: u32) -> Self {
@@ -180,7 +177,7 @@ impl PartRange {
         if threshold <= range.start {
             return (None, Some(*self));
         }
-        if threshold <= range.start {
+        if threshold > range.end {
             return (Some(*self), None);
         }
         (
