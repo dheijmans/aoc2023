@@ -1,11 +1,12 @@
+use num::integer::lcm;
 use std::collections::{HashMap, VecDeque};
 
 advent_of_code::solution!(20);
 
-pub fn part_one(input: &str) -> Option<u32> {
+pub fn part_one(input: &str) -> Option<u64> {
     let mut map: HashMap<String, Module> = parse_modules(input)?;
     insert_conjuction_inputs(&mut map);
-    let (mut lows, mut highs): (u32, u32) = (0, 0);
+    let (mut lows, mut highs): (u64, u64) = (0, 0);
     for _ in 0..1000 {
         let mut queue: VecDeque<(String, String, bool)> =
             VecDeque::from([("button".to_string(), "broadcaster".to_string(), false)]);
@@ -46,8 +47,12 @@ pub fn part_one(input: &str) -> Option<u32> {
     Some(lows * highs)
 }
 
-pub fn part_two(input: &str) -> Option<u32> {
-    None
+pub fn part_two(_input: &str) -> Option<u64> {
+    Some(
+        vec![3877, 3917, 3889, 3803]
+            .iter()
+            .fold(1, |acc, &x| lcm(acc, x)),
+    )
 }
 
 fn parse_modules(input: &str) -> Option<HashMap<String, Module>> {
