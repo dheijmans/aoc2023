@@ -47,12 +47,68 @@ pub fn part_one(input: &str) -> Option<u64> {
     Some(lows * highs)
 }
 
-pub fn part_two(_input: &str) -> Option<u64> {
-    Some(
-        vec![3877, 3917, 3889, 3803]
-            .iter()
-            .fold(1, |acc, &x| lcm(acc, x)),
-    )
+pub fn part_two(input: &str) -> Option<u64> {
+    let mut map: HashMap<String, Module> = parse_modules(input)?;
+    insert_conjuction_inputs(&mut map);
+    let mut cycles: Vec<String> = map
+        .get_mut(&get_penultimate(input)?)?
+        .get_conjunction_states()?
+        .iter()
+        .map(|(x, _)| x.clone())
+        .collect();
+    let mut result: u64 = 1;
+    let mut i: u64 = 1;
+    loop {
+        let mut queue: VecDeque<(String, String, bool)> =
+            VecDeque::from([("button".to_string(), "broadcaster".to_string(), false)]);
+        while let Some((from, dest, pulse)) = queue.pop_front() {
+            if pulse && cycles.contains(&from) {
+                let index = cycles.iter().position(|x| *x == from).unwrap();
+                cycles.remove(index);
+                result = lcm(result, i);
+                if cycles.is_empty() {
+                    return Some(result);
+                }
+            }
+            if let Some(Module {
+                id,
+                module_type,
+                outputs,
+            }) = map.get_mut(&dest)
+            {
+                match module_type {
+                    ModuleType::Broadcaster => outputs
+                        .iter()
+                        .for_each(|output| queue.push_back((id.clone(), output.clone(), pulse))),
+                    ModuleType::FlipFlop { state } => {
+                        if !pulse {
+                            *state = !*state;
+                            outputs.iter().for_each(|output| {
+                                queue.push_back((id.clone(), output.clone(), *state))
+                            })
+                        }
+                    }
+                    ModuleType::Conjunction { states } => {
+                        *states.get_mut(&from)? = pulse;
+                        let all_high: bool = states.iter().all(|(_, &state)| state);
+                        outputs.iter().for_each(|output| {
+                            queue.push_back((id.clone(), output.clone(), !all_high))
+                        })
+                    }
+                };
+            }
+        }
+        i += 1;
+    }
+}
+
+fn get_penultimate(input: &str) -> Option<String> {
+    for line in input.lines() {
+        if line.contains("rx") {
+            return Some(line.split_once(" -> ")?.0[1..].to_string());
+        }
+    }
+    None
 }
 
 fn parse_modules(input: &str) -> Option<HashMap<String, Module>> {
