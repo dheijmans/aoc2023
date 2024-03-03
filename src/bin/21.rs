@@ -8,8 +8,13 @@ const DIRECTIONS: [Vector2<i64>; 4] =
 
 pub fn part_one(input: &str) -> Option<u32> {
     let garden: Garden = Garden::parse(input)?;
+    let steps = count_tiles(garden, 64);
+    Some(steps)
+}
+
+fn count_tiles(garden: Garden, steps: u32) -> u32 {
     let mut state = vec![garden.start];
-    for _ in 0..64 {
+    for _ in 0..steps {
         let mut new_state = vec![];
         while let Some(tile) = state.pop() {
             for dir in DIRECTIONS {
@@ -21,7 +26,7 @@ pub fn part_one(input: &str) -> Option<u32> {
         }
         state = new_state.into_iter().unique().collect();
     }
-    Some(state.len() as u32)
+    state.len() as u32
 }
 
 pub fn part_two(input: &str) -> Option<u32> {
@@ -30,13 +35,13 @@ pub fn part_two(input: &str) -> Option<u32> {
 
 struct Garden {
     grid: Vec<Vec<bool>>,
-    width: usize,
-    height: usize,
+    width: i64,
+    height: i64,
     start: Point2<i64>,
 }
 
 impl Garden {
-    fn new(grid: Vec<Vec<bool>>, width: usize, height: usize, start: Point2<i64>) -> Self {
+    fn new(grid: Vec<Vec<bool>>, width: i64, height: i64, start: Point2<i64>) -> Self {
         Self {
             grid,
             width,
@@ -67,16 +72,16 @@ impl Garden {
                     .collect()
             })
             .collect();
-        Some(Self::new(grid, width, height, start))
+        Some(Self::new(grid, width as i64, height as i64, start))
     }
 
     fn is_plot(&self, tile: Point2<i64>) -> bool {
         let x = tile.x;
         let y = tile.y;
-        if x < 0 || x >= self.width as i64 {
+        if x < 0 || x >= self.width {
             return false;
         }
-        if y < 0 || y >= self.height as i64 {
+        if y < 0 || y >= self.height {
             return false;
         }
         !self.grid[y as usize][x as usize]
