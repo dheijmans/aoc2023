@@ -6,31 +6,45 @@ advent_of_code::solution!(21);
 const DIRECTIONS: [Vector2<i64>; 4] =
     [vector![0, -1], vector![1, 0], vector![0, 1], vector![-1, 0]];
 
-pub fn part_one(input: &str) -> Option<u32> {
+pub fn part_one(input: &str) -> Option<i64> {
     let garden: Garden = Garden::parse(input)?;
-    let steps = count_tiles(garden, 64);
-    Some(steps)
+    let steps = count_tiles(&garden, 64, false);
+    Some(steps[64])
 }
 
-fn count_tiles(garden: Garden, steps: u32) -> u32 {
+pub fn part_two(input: &str) -> Option<i64> {
+    let garden: Garden = Garden::parse(input)?;
+    let (x0, x1, x2) = (
+        (garden.width / 2) as usize,
+        ((garden.width / 2) + garden.width) as usize,
+        ((garden.width / 2) + 2 * garden.width) as usize,
+    );
+    let steps = count_tiles(&garden, x2 as i64, true);
+    let (y0, y1, y2) = (steps[x0], steps[x1], steps[x2]);
+    let c = y0;
+    let b = (4 * y1 - y2 - 3 * c) / 2;
+    let a = y1 - b - c;
+    let x = (26_501_365 - x0 as i64) / garden.width;
+    Some(a * x * x + b * x + c)
+}
+
+fn count_tiles(garden: &Garden, steps: i64, repeat: bool) -> Vec<i64> {
     let mut state = vec![garden.start];
+    let mut tiles: Vec<i64> = vec![1];
     for _ in 0..steps {
         let mut new_state = vec![];
         while let Some(tile) = state.pop() {
             for dir in DIRECTIONS {
                 let new_tile = tile + dir;
-                if garden.is_plot(new_tile) {
+                if garden.is_plot(new_tile, repeat) {
                     new_state.push(new_tile);
                 }
             }
         }
         state = new_state.into_iter().unique().collect();
+        tiles.push(state.len() as i64)
     }
-    state.len() as u32
-}
-
-pub fn part_two(input: &str) -> Option<u32> {
-    None
+    tiles
 }
 
 struct Garden {
@@ -75,13 +89,15 @@ impl Garden {
         Some(Self::new(grid, width as i64, height as i64, start))
     }
 
-    fn is_plot(&self, tile: Point2<i64>) -> bool {
-        let x = tile.x;
-        let y = tile.y;
-        if x < 0 || x >= self.width {
+    fn is_plot(&self, tile: Point2<i64>, repeat: bool) -> bool {
+        let mut x = tile.x;
+        let mut y = tile.y;
+        if repeat {
+            x = ((tile.x % self.width) + self.width) % self.width;
+            y = ((tile.y % self.height) + self.height) % self.height;
+        } else if x < 0 || x >= self.width {
             return false;
-        }
-        if y < 0 || y >= self.height {
+        } else if y < 0 || y >= self.height {
             return false;
         }
         !self.grid[y as usize][x as usize]
